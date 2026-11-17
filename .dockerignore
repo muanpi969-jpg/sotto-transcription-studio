@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+**/dist
+**/venv
+**/.venv
+**/__pycache__
+.git
+.env*
+.cache
+backend
+docs
+**/test-results
+**/playwright-report
+frontend/public/ort
