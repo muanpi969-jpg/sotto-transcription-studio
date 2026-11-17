@@ -184,6 +184,28 @@ test("microphone recording produces a correctly typed, playable audio file", asy
   context,
 }) => {
   await context.grantPermissions(["microphone"]);
+  // A real Web Audio stream exercises MediaRecorder without depending on an
+  // operating-system microphone driver in headless Linux CI.
+  await page.addInitScript(() => {
+    navigator.mediaDevices.getUserMedia = async () => {
+      const audioContext = new AudioContext();
+      const oscillator = audioContext.createOscillator();
+      const destination = audioContext.createMediaStreamDestination();
+      oscillator.connect(destination);
+      oscillator.start();
+      await audioContext.resume();
+      const stream = destination.stream;
+      for (const track of stream.getTracks()) {
+        const stopTrack = track.stop.bind(track);
+        track.stop = () => {
+          stopTrack();
+          oscillator.stop();
+          void audioContext.close();
+        };
+      }
+      return stream;
+    };
+  });
   await page.goto("/");
   await page
     .getByRole("button", { name: "Start recording", exact: true })
